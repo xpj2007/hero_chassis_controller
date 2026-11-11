@@ -13,17 +13,12 @@ add_definitions(-Wall -Werror)
 find_package(catkin REQUIRED
     COMPONENTS
     roscpp
-    roslint
-    controller_interface
-    hardware_interface
-    pluginlib
-    control_toolbox
-    realtime_tools
+    std_msgs
     )
 
 ## Find system libraries
-find_package(Eigen3 REQUIRED)
-find_package(Boost REQUIRED)
+#find_package(Eigen3 REQUIRED)
+#find_package(Boost REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -38,16 +33,12 @@ catkin_package(
     INCLUDE_DIRS
     include
     ## This is only necessary because Eigen3 sets a non-standard EIGEN3_INCLUDE_DIR variable
-    ${EIGEN3_INCLUDE_DIR}
+#    ${EIGEN3_INCLUDE_DIR}
     LIBRARIES
-    ${PROJECT_NAME}
+#    ${PROJECT_NAME}
     CATKIN_DEPENDS
     roscpp
-    controller_interface
-    hardware_interface
-    pluginlib
-    control_toolbox
-    realtime_tools
+    std_msgs
     DEPENDS
     ## find_package(Eigen3) provides a non standard EIGEN3_INCLUDE_DIR instead of Eigen3_INCLUDE_DIRS.
     ## Therefore, the DEPEND does not work as expected and we need to add the directory to the INCLUDE_DIRS
@@ -67,9 +58,9 @@ include_directories(
     include
     ${catkin_INCLUDE_DIRS}
     # Set manually because Eigen sets a non standard INCLUDE DIR
-    ${EIGEN3_INCLUDE_DIR}
-    # Set because Boost is an internal dependency, not transitive.
-    ${Boost_INCLUDE_DIRS}
+#    ${EIGEN3_INCLUDE_DIR}
+#    # Set because Boost is an internal dependency, not transitive.
+#    ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library

@@ -10,27 +10,9 @@
   <!-- buildtool_depend: dependencies of the build process -->
   <buildtool_depend>catkin</buildtool_depend>
   <!-- build_depend: dependencies only used in source files -->
-  <build_depend>boost</build_depend>
-  <build_depend>controller_interface</build_depend>
-  <build_depend>hardware_interface</build_depend>
-  <build_depend>pluginlib</build_depend>
-  <build_depend>control_toolbox</build_depend>
-  <build_depend>realtime_tools</build_depend>
-  <!-- depend: build, export, and execution dependency -->
-  <depend>eigen</depend>
+
   <depend>roscpp</depend>
-  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
 
-  <exec_depend>controller_interface</exec_depend>
-  <exec_depend>hardware_interface</exec_depend>
-  <exec_depend>pluginlib</exec_depend>
-  <exec_depend>control_toolbox</exec_depend>
-  <exec_depend>realtime_tools</exec_depend>
-
-  <build_depend>roslint</build_depend>
-
-  <export>
-    <controller_interface plugin="${prefix}/hero_chassis_controller_plugin.xml"/>
-  </export>
   
 </package>
