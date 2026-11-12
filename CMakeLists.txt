@@ -95,6 +95,7 @@ include_directories(
 #    )
 add_library(${PROJECT_NAME}
         src/hero_chassis_controller.cpp
+        src/keyboard.cpp
 )
 
 ## Add dependencies to exported targets, like ROS msgs or srvs
