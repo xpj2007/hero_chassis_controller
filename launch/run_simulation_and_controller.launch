@@ -1,0 +1,11 @@
+<launch>
+  <!-- 这里rm_description改成rm_description_for_task导入机器人仿真启动 -->
+  <include file="$(find rm_description_for_task)/launch/hero.launch">
+    <arg name="load_chassis" value="true"/>
+    <arg name="roller_type" value="realistic"/>
+    <arg name="paused" value="true"/>
+  </include>
+
+  <include file="$(find hero_chassis_controller)/launch/load_controller.launch"/>
+
+</launch>

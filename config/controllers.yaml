@@ -1,0 +1,44 @@
+controller:
+  hero_chassis_controller:
+    type: hero_chassis_controller/HeroChassisController
+    left_front_pid:
+      p: 2.2
+      i: 0.2
+      d: 0.0
+      i_clamp_max: 5.0
+      i_clamp_min: -5.0
+      antiwindup: true
+
+    right_front_pid:
+      p: 2.2
+      i: 0.2
+      d: 0.0
+      i_clamp_max: 5.0
+      i_clamp_min: -5.0
+      antiwindup: true
+
+    left_back_pid:
+      p: 2.2
+      i: 0.2
+      d: 0.0
+      i_clamp_max: 5.0
+      i_clamp_min: -5.0
+      antiwindup: true
+
+    right_back_pid:
+      p: 2.2
+      i: 0.2
+      d: 0.0
+      i_clamp_max: 5.0
+      i_clamp_min: -5.0
+      antiwindup: true
+
+    wheel_radius: 0.07625
+    wheel_track: 0.4
+    wheel_base: 0.4
+
+    mode: 1
+
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 200
