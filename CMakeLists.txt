@@ -14,6 +14,7 @@ find_package(catkin REQUIRED
     COMPONENTS
     roscpp
     std_msgs
+    geometry_msgs
     controller_interface
     hardware_interface
     pluginlib
@@ -44,6 +45,7 @@ catkin_package(
     CATKIN_DEPENDS
     roscpp
     std_msgs
+    geometry_msgs
     controller_interface
     hardware_interface
     pluginlib

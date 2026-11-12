@@ -10,6 +10,12 @@ namespace hero_chassis_controller
         right_front_joint_=effort_joint_interface->getHandle("right_front_wheel_joint");
         right_back_joint_=effort_joint_interface->getHandle("right_back_wheel_joint");
 
+        controller_nh.getParam("wheel_radius",wheel_radius);
+        double wheel_track;
+        controller_nh.getParam("wheel_track",wheel_track);
+        double wheel_base;
+        controller_nh.getParam("wheel_base",wheel_base);
+        K_Lx_Ly=wheel_track/2+wheel_base/2;
 
         if (!left_front_pid_.initParam(controller_nh.resolveName("left_front_pid")))
             return false;
@@ -20,13 +26,20 @@ namespace hero_chassis_controller
         if (!right_back_pid_.initParam(controller_nh.resolveName("right_back_pid")))
             return false;
 
+        cmd_vel_sub_ = root_nh.subscribe("/cmd_vel", 1, &HeroChassisController::doCmdVelCallback, this);
+
         return true;
     }
 
     void HeroChassisController::update(const ros::Time& time, const ros::Duration& period)
     {
-        double out_effort[4]={};
 
+        left_front_target_V=(target_Vx-target_Vy-target_Az*K_Lx_Ly)/wheel_radius;
+        left_back_target_V=(target_Vx+target_Vy-target_Az*K_Lx_Ly)/wheel_radius;
+        right_front_target_V=(target_Vx+target_Vy+target_Az*K_Lx_Ly)/wheel_radius;
+        right_back_target_V=(target_Vx-target_Vy+target_Az*K_Lx_Ly)/wheel_radius;
+
+        double out_effort[4]={};
         out_effort[0]=left_front_pid_.computeCommand(left_front_target_V-left_front_joint_.getVelocity(),period);
         out_effort[1]=left_back_pid_.computeCommand(left_back_target_V-left_back_joint_.getVelocity(),period);
         out_effort[2]=right_front_pid_.computeCommand(right_front_target_V-right_front_joint_.getVelocity(),period);
@@ -54,6 +67,12 @@ namespace hero_chassis_controller
         right_back_joint_.setCommand(out_effort[3]);
     }
 
+    void HeroChassisController::doCmdVelCallback(const geometry_msgs::Twist& msg)
+    {
+        this->target_Vx=msg.linear.x;
+        this->target_Vy=msg.linear.y;
+        this->target_Az=msg.angular.z;
+    }
 
 
 }

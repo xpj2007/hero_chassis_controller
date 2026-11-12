@@ -21,7 +21,7 @@ controller:
       p: 2.2
       i: 0.2
       d: 0.0
-      i_clamp_max: 。5.0
+      i_clamp_max: 5.0
       i_clamp_min: -5.0
       antiwindup: true
 
@@ -32,6 +32,10 @@ controller:
       i_clamp_max: 5.0
       i_clamp_min: -5.0
       antiwindup: true
+
+    wheel_radius: 0.07625
+    wheel_track: 0.4
+    wheel_base: 0.4
 
   joint_state_controller:
     type: joint_state_controller/JointStateController

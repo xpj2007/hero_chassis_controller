@@ -5,6 +5,7 @@
 #include <controller_interface/controller.h>
 #include <ros/ros.h>
 #include <control_toolbox/pid.h>
+#include <geometry_msgs/Twist.h>
 
 
 namespace hero_chassis_controller
@@ -17,7 +18,12 @@ namespace hero_chassis_controller
 
         void update(const ros::Time& time, const ros::Duration& period) override;
 
+        void doCmdVelCallback(const geometry_msgs::Twist& msg);
+
         private:
+
+        ros::Subscriber cmd_vel_sub_;
+
         hardware_interface::JointHandle left_front_joint_;
         hardware_interface::JointHandle left_back_joint_;
         hardware_interface::JointHandle right_front_joint_;
@@ -28,14 +34,23 @@ namespace hero_chassis_controller
         control_toolbox::Pid right_front_pid_;
         control_toolbox::Pid right_back_pid_;
 
-        double left_front_target_V=2.0;
-        double right_back_target_V=2.0;
-        double left_back_target_V=2.0;
-        double right_front_target_V=2.0;
+        double left_front_target_V=0;
+        double right_back_target_V=0;
+        double left_back_target_V=0;
+        double right_front_target_V=0;
 
         //调pid时用的测试参数
         // ros::Time last_change_;
         // int V=0;
+
+        double target_Vx=0;
+        double target_Vy=0;
+        double target_Az=0;
+
+        double K_Lx_Ly=0;
+        double wheel_radius=0;
+
+
 
 
     };
