@@ -90,12 +90,12 @@ include_directories(
 #target_compile_features(${PROJECT_NAME}_core INTERFACE cxx_std_11)
 
 ## Declare cpp executables
-#add_executable(${PROJECT_NAME}
-#    src/${PROJECT_NAME}_node.cpp
-#    )
+add_executable(key
+    src/keyboard.cpp
+    )
+
 add_library(${PROJECT_NAME}
         src/hero_chassis_controller.cpp
-        src/keyboard.cpp
 )
 
 ## Add dependencies to exported targets, like ROS msgs or srvs
@@ -116,6 +116,10 @@ target_link_libraries(${PROJECT_NAME}
 
     ${catkin_LIBRARIES}
     )
+
+target_link_libraries(key
+        ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
