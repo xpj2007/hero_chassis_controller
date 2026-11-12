@@ -20,6 +20,10 @@ find_package(catkin REQUIRED
     pluginlib
     control_toolbox
     realtime_tools
+    nav_msgs
+    tf2
+    tf2_ros
+    tf2_geometry_msgs
     )
 
 ## Find system libraries
@@ -51,6 +55,10 @@ catkin_package(
     pluginlib
     control_toolbox
     realtime_tools
+    nav_msgs
+    tf2
+    tf2_ros
+    tf2_geometry_msgs
     DEPENDS
     ## find_package(Eigen3) provides a non standard EIGEN3_INCLUDE_DIR instead of Eigen3_INCLUDE_DIRS.
     ## Therefore, the DEPEND does not work as expected and we need to add the directory to the INCLUDE_DIRS

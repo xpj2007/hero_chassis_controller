@@ -6,6 +6,9 @@
 #include <ros/ros.h>
 #include <control_toolbox/pid.h>
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Odometry.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2/transform_datatypes.h>
 
 
 namespace hero_chassis_controller
@@ -18,11 +21,10 @@ namespace hero_chassis_controller
 
         void update(const ros::Time& time, const ros::Duration& period) override;
 
-        void doCmdVelCallback(const geometry_msgs::Twist& msg);
-
         private:
-
         ros::Subscriber cmd_vel_sub_;
+        ros::Publisher odom_pub_;
+        tf2_ros::TransformBroadcaster odom_broadcaster_;
 
         hardware_interface::JointHandle left_front_joint_;
         hardware_interface::JointHandle left_back_joint_;
@@ -47,9 +49,20 @@ namespace hero_chassis_controller
         double target_Vy=0;
         double target_Az=0;
 
+        double current_Vx=0;
+        double current_Vy=0;
+        double current_Az=0;
+
         double K_Lx_Ly=0;
         double wheel_radius=0;
 
+        void publishOdometry(const ros::Time& time,const ros::Duration& period);
+
+        void doCmdVelCallback(const geometry_msgs::Twist& msg);
+
+        double X=0;
+        double Y=0;
+        double YAW=0;
 
 
 

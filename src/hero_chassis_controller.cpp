@@ -1,5 +1,8 @@
 #include "hero_chassis_controller/hero_chassis_controller.h"
+
+#include <nav_msgs/Odometry.h>
 #include <pluginlib/class_list_macros.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace hero_chassis_controller
 {
@@ -27,6 +30,7 @@ namespace hero_chassis_controller
             return false;
 
         cmd_vel_sub_ = root_nh.subscribe("/cmd_vel", 1, &HeroChassisController::doCmdVelCallback, this);
+        odom_pub_= root_nh.advertise<nav_msgs::Odometry>("/odom", 100);
 
         return true;
     }
@@ -39,11 +43,20 @@ namespace hero_chassis_controller
         right_front_target_V=(target_Vx+target_Vy+target_Az*K_Lx_Ly)/wheel_radius;
         right_back_target_V=(target_Vx-target_Vy+target_Az*K_Lx_Ly)/wheel_radius;
 
+        const double w_lf=left_front_joint_.getVelocity();
+        const double w_lb=left_back_joint_.getVelocity();
+        const double w_rf=right_front_joint_.getVelocity();
+        const double w_rb=right_back_joint_.getVelocity();
+
         double out_effort[4]={};
-        out_effort[0]=left_front_pid_.computeCommand(left_front_target_V-left_front_joint_.getVelocity(),period);
-        out_effort[1]=left_back_pid_.computeCommand(left_back_target_V-left_back_joint_.getVelocity(),period);
-        out_effort[2]=right_front_pid_.computeCommand(right_front_target_V-right_front_joint_.getVelocity(),period);
-        out_effort[3]=right_back_pid_.computeCommand(right_back_target_V-right_back_joint_.getVelocity(),period);
+        out_effort[0]=left_front_pid_.computeCommand(left_front_target_V-w_lf,period);
+        out_effort[1]=left_back_pid_.computeCommand(left_back_target_V-w_lb,period);
+        out_effort[2]=right_front_pid_.computeCommand(right_front_target_V-w_rf,period);
+        out_effort[3]=right_back_pid_.computeCommand(right_back_target_V-w_rb,period);
+
+        current_Vx = wheel_radius / 4.0 * ( w_lf + w_rf + w_lb + w_rb);
+        current_Vy = wheel_radius / 4.0 * (-w_lf + w_rf + w_lb - w_rb);
+        current_Az = wheel_radius / (4.0 * K_Lx_Ly) * (-w_lf + w_rf - w_lb + w_rb);
 
         //阶越测试
         // if ((time - last_change_).toSec() > 3) {
@@ -55,6 +68,9 @@ namespace hero_chassis_controller
         // out_effort[1]=left_back_pid_.computeCommand(V-left_back_joint_.getVelocity(),period);
         // out_effort[2]=right_front_pid_.computeCommand(V-right_front_joint_.getVelocity(),period);
         // out_effort[3]=right_back_pid_.computeCommand(V-right_back_joint_.getVelocity(),period);
+
+
+        publishOdometry(time,period);
 
         for(int i=0;i<4;i++)
         {
@@ -74,6 +90,56 @@ namespace hero_chassis_controller
         this->target_Az=msg.angular.z;
     }
 
+    void HeroChassisController::publishOdometry(const ros::Time& time,const ros::Duration& period)
+    {
+        const double dt = period.toSec();
+        const double delta_yaw = current_Az * dt;
+        X   += (current_Vx * std::cos(YAW) - current_Vy * std::sin(YAW)) * dt;
+        Y   += (current_Vx * std::sin(YAW) + current_Vy * std::cos(YAW)) * dt;
+        YAW += delta_yaw;
+        YAW = std::atan2(std::sin(YAW), std::cos(YAW));
+
+        tf2::Quaternion qtn;
+        qtn.setRPY(0,0,YAW);
+
+        geometry_msgs::TransformStamped tfs;
+        tfs.header.stamp=time;
+        tfs.header.frame_id="odom";
+        tfs.child_frame_id="base_link";
+        tfs.transform.translation.x=X;
+        tfs.transform.translation.y=Y;
+        tfs.transform.translation.z=0.0;
+        tfs.transform.rotation.w=qtn.getW();
+        tfs.transform.rotation.x=qtn.getX();
+        tfs.transform.rotation.y=qtn.getY();
+        tfs.transform.rotation.z=qtn.getZ();
+
+        odom_broadcaster_.sendTransform(tfs);
+
+
+        nav_msgs::Odometry odom_tfs2;
+        odom_tfs2.header.stamp=time;
+        odom_tfs2.header.frame_id="odom";
+        odom_tfs2.child_frame_id="base_link";
+        odom_tfs2.pose.pose.position.x=X;
+        odom_tfs2.pose.pose.position.y=Y;
+        odom_tfs2.pose.pose.position.z=0.0;
+        odom_tfs2.pose.pose.orientation.w=qtn.getW();
+        odom_tfs2.pose.pose.orientation.x=qtn.getX();
+        odom_tfs2.pose.pose.orientation.y=qtn.getY();
+        odom_tfs2.pose.pose.orientation.z=qtn.getZ();
+        odom_tfs2.pose.pose.orientation.w=qtn.getW();
+        odom_tfs2.twist.twist.linear.x=target_Vx;
+        odom_tfs2.twist.twist.linear.y=target_Vy;
+        odom_tfs2.twist.twist.linear.z=0.0;
+        odom_tfs2.twist.twist.angular.x=target_Az;
+        odom_tfs2.twist.twist.angular.y=0.0;
+        odom_tfs2.twist.twist.angular.z=0.0;
+
+        odom_pub_.publish(odom_tfs2);
+
+
+    }
 
 }
 
