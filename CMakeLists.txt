@@ -17,6 +17,8 @@ find_package(catkin REQUIRED
     controller_interface
     hardware_interface
     pluginlib
+    control_toolbox
+    realtime_tools
     )
 
 ## Find system libraries
@@ -45,6 +47,8 @@ catkin_package(
     controller_interface
     hardware_interface
     pluginlib
+    control_toolbox
+    realtime_tools
     DEPENDS
     ## find_package(Eigen3) provides a non standard EIGEN3_INCLUDE_DIR instead of Eigen3_INCLUDE_DIRS.
     ## Therefore, the DEPEND does not work as expected and we need to add the directory to the INCLUDE_DIRS
@@ -98,7 +102,7 @@ add_dependencies(${PROJECT_NAME}
 #    )
 
 target_link_libraries(${PROJECT_NAME}
-    
+
     ${catkin_LIBRARIES}
     )
 
