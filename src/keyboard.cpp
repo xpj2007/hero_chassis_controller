@@ -6,6 +6,7 @@
 
 int main(int argc, char **argv)
 {
+    setlocale(LC_ALL, "");
     ros::init(argc, argv, "keyboard");
     ros::NodeHandle nh;
     ros::Publisher pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
