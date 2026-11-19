@@ -96,6 +96,8 @@ add_executable(key
 
 add_library(${PROJECT_NAME}
         src/hero_chassis_controller.cpp
+        src/hero_chassis_kinematics.cpp
+        src/hero_chassis_odometry.cpp
 )
 
 ## Add dependencies to exported targets, like ROS msgs or srvs
