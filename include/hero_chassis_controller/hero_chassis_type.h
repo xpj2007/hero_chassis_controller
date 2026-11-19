@@ -12,7 +12,10 @@ typedef struct {
 
 // 轮序固定为 [lf, lb, rf, rb]
 typedef struct {
-    double v[4] = {0.0, 0.0, 0.0, 0.0};
+    double lf = 0.0;       
+    double lb = 0.0;       
+    double rf = 0.0;       
+    double rb = 0.0;
 }WheelVelocity;
 
 typedef struct {
