@@ -1,9 +1,11 @@
 #include "hero_chassis_controller/hero_chassis_kinematics.h"
 
 namespace hero_chassis_controller {
-    HeroChassisKinematics::HeroChassisKinematics(double wheel_radius, double wheel_base, double wheel_track)
-    : wheel_radius_(wheel_radius), k_((wheel_base + wheel_track) / 2.0) {}
-    
+    void HeroChassisKinematics::init(double wheel_radius, double wheel_base, double wheel_track) {
+        wheel_radius_ = wheel_radius;
+        k_ = (wheel_base + wheel_track) / 2.0;
+    }
+
     ChassisVelocity HeroChassisKinematics::forwardKinematics(const WheelVelocity& wheel_velocities_) const {
         ChassisVelocity chassis_velocity;
         chassis_velocity.vx = (wheel_velocities_.lf + wheel_velocities_.lb + wheel_velocities_.rf + wheel_velocities_.rb) * (wheel_radius_ / 4.0);

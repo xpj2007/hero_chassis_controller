@@ -12,68 +12,92 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
+#include "hero_chassis_controller/hero_chassis_kinematics.h"
+#include "hero_chassis_controller/hero_chassis_odometry.h"
+
 
 namespace hero_chassis_controller
 {
+    class ChassisControllerConfig
+    {
+        public:
+        double wheel_radius = 0.0;
+        double wheel_base   = 0.0;
+        double wheel_track  = 0.0;
+        double max_effort   = 5.0;
+        int    mode         = 0;
+
+        std::string cmd_vel_topic = "/cmd_vel";
+        std::string odometry_topic= "/odom";
+        std::string odom_frame    = "odom";
+        std::string base_frame    = "base_link";
+
+        bool loadParams(ros::NodeHandle& controller_nh);
+    };
+
+    class HeroChassisWheelPid
+    {
+        public:
+        control_toolbox::Pid lf_,rf_,lb_,rb_;
+        bool loadPid(ros::NodeHandle& controller_nh);
+        double lf_output_,rf_output_,lb_output_,rb_output_;
+        void update(WheelVelocity& wheel_velocity_target, WheelVelocity& wheel_velocity_current, const ros::Duration& period)
+        {
+            lf_output_ = lf_.computeCommand(wheel_velocity_target.lf-wheel_velocity_current.lf, period);
+            rf_output_ = rf_.computeCommand(wheel_velocity_target.rf-wheel_velocity_current.rf, period);
+            lb_output_ = lb_.computeCommand(wheel_velocity_target.lb-wheel_velocity_current.lb, period);
+            rb_output_ = rb_.computeCommand(wheel_velocity_target.rb-wheel_velocity_current.rb, period);
+        }
+    };
+
     class HeroChassisController :
     public controller_interface::Controller<hardware_interface::EffortJointInterface>
     {
         public:
-        HeroChassisController():tf_listener_(tf_buffer_){}
+        HeroChassisController() : tf_buffer_(ros::Duration(10.0)), tf_listener_(tf_buffer_) {};
         bool init(hardware_interface::EffortJointInterface* effort_joint_interface, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
 
         void update(const ros::Time& time, const ros::Duration& period) override;
 
         private:
-        ros::Subscriber cmd_vel_sub_;
-        ros::Publisher odom_pub_;
-        tf2_ros::TransformBroadcaster odom_broadcaster_;
-        tf2_ros::Buffer tf_buffer_{ros::Duration(1.0)};
+
+        //硬件接口
+        hardware_interface::JointHandle left_front_wheel_joint_;
+        hardware_interface::JointHandle right_front_wheel_joint_;
+        hardware_interface::JointHandle left_back_wheel_joint_;
+        hardware_interface::JointHandle right_back_wheel_joint_;
+
+        //控制器配置参数
+        ChassisControllerConfig config_;
+
+        //速度命令
+        ChassisVelocity chassis_velocity_target_;
+
+        //PID控制器
+        HeroChassisWheelPid wheel_pid_;
+
+        //运动学模型
+        HeroChassisKinematics kinematics_;
+        //里程计计算
+        HeroChassisOdometry odometry_;
+
+        // 通信接口
+        ros::Subscriber cmd_vel_subscriber_;
+        ros::Publisher odometry_publisher_;
+
+        // TF广播器
+        tf2_ros::TransformBroadcaster tf_broadcaster_;
+        tf2_ros::Buffer tf_buffer_;
         tf2_ros::TransformListener tf_listener_;
 
-        hardware_interface::JointHandle left_front_joint_;
-        hardware_interface::JointHandle left_back_joint_;
-        hardware_interface::JointHandle right_front_joint_;
-        hardware_interface::JointHandle right_back_joint_;
+        // 回调函数
+        void doCmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
 
-        control_toolbox::Pid left_front_pid_;
-        control_toolbox::Pid left_back_pid_;
-        control_toolbox::Pid right_front_pid_;
-        control_toolbox::Pid right_back_pid_;
+        // 里程计消息发布函数
+        void publishOdometry(const ros::Time& time);
 
-        double left_front_target_V=0;
-        double right_back_target_V=0;
-        double left_back_target_V=0;
-        double right_front_target_V=0;
-
-        //调pid时用的测试参数
-        // ros::Time last_change_;
-        // int V=0;
-
-        double target_Vx_odom_=0;
-        double target_Vy_odom_=0;
-        double target_Az_odom_=0;
-
-        double target_Vx=0;
-        double target_Vy=0;
-        double target_Az=0;
-
-        double current_Vx=0;
-        double current_Vy=0;
-        double current_Az=0;
-
-        double K_Lx_Ly=0;
-        double wheel_radius=0;
-
-        void publishOdometry(const ros::Time& time,const ros::Duration& period);
-        void odomToBaselinkSpeed(const ros::Time& time,const ros::Duration& period);
-        void doCmdVelCallback(const geometry_msgs::Twist& msg);
-
-        double X=0;
-        double Y=0;
-        double YAW=0;
-        int mode=0;
-
+        // TF广播函数
+        void broadcastTransform(const ros::Time& time);
 
 
     };
