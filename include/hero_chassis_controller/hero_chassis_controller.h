@@ -27,6 +27,10 @@ namespace hero_chassis_controller
         double effort_limit = 5.0;
         int    mode         = 0;
 
+        double chassis_line_accel_limit    = 0.5;   
+        double chassis_angular_accel_limit = 1.5;   
+        double zero_speed_threshold        = 0.2; 
+
         std::string cmd_vel_topic = "/cmd_vel";
         std::string odometry_topic= "/odom";
         std::string odom_frame    = "odom";
@@ -78,6 +82,8 @@ namespace hero_chassis_controller
 
         //速度命令
         ChassisVelocity chassis_velocity_target_;
+        //加速度限幅后的速度命令
+        ChassisVelocity chassis_velocity_applied_;
 
         //PID控制器
         HeroChassisWheelPid wheel_pid_;
@@ -104,6 +110,9 @@ namespace hero_chassis_controller
 
         // TF广播函数
         void broadcastTransform(const ChassisPose& odom_pose, const ros::Time& time);
+
+        // 速度限幅函数
+        ChassisVelocity limitRate(const ChassisVelocity& target, const ChassisVelocity& cur, double dv_limit, double dw_limit, double dt); 
 
 
     };

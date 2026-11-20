@@ -19,6 +19,10 @@ namespace hero_chassis_controller
         controller_nh.param<std::string>("odom_frame", odom_frame, "odom");
         controller_nh.param<std::string>("base_frame", base_frame, "base_link");
 
+        controller_nh.param("chassis_line_accel_limit", chassis_line_accel_limit, 0.5);
+        controller_nh.param("chassis_angular_accel_limit", chassis_angular_accel_limit, 1.5);
+        controller_nh.param("zero_speed_threshold", zero_speed_threshold, 0.2);
+
         return true;
     }
 
@@ -71,18 +75,19 @@ namespace hero_chassis_controller
         // 计算当前底盘速度
         const ChassisVelocity chassis_velocity_current= kinematics_.forwardKinematics(wheel_velocity_current);
 
-
         // 里程计坐标更新
         odometry_.updatePose(chassis_velocity_current, period.toSec());
 
-        //tf坐标变换广播
+        // tf坐标变换广播
         broadcastTransform(odometry_.getChassisPose(), time);
 
-        //里程计信息发布
+        // 里程计信息发布
         publishOdometry(odometry_.getChassisPose(),chassis_velocity_current,time);
 
+        // 目标速度的加速度限幅
+        chassis_velocity_applied_=limitRate(chassis_velocity_target_, chassis_velocity_applied_, config_.chassis_line_accel_limit, config_.chassis_angular_accel_limit, period.toSec());
         // 计算轮速目标值
-        WheelVelocity wheel_velocity_target = kinematics_.inverseKinematics(chassis_velocity_target_);
+        WheelVelocity wheel_velocity_target = kinematics_.inverseKinematics(chassis_velocity_applied_);
 
         // PID控制器计算输出
         wheel_pid_.update(wheel_velocity_target, wheel_velocity_current, period, config_.effort_limit);
@@ -155,6 +160,23 @@ namespace hero_chassis_controller
         odometry_publisher_.publish(odometry_msgs);
 
 
+    }
+
+    inline double approach(double c, double t, double step){
+        const double d = t - c;
+        if (std::fabs(d) <= step) return t;
+        return c + (d > 0.0 ? step : -step);
+    }
+
+    ChassisVelocity HeroChassisController::limitRate(const ChassisVelocity& target, const ChassisVelocity& cur, double dv_limit, double dw_limit, double dt){
+        const double dv_max = dv_limit * dt;
+        const double dw_max = dw_limit * dt;
+        ChassisVelocity limited_result_;
+
+        limited_result_.vx = approach(cur.vx, target.vx, dv_max);
+        limited_result_.vy = approach(cur.vy, target.vy, dv_max);
+        limited_result_.wz = approach(cur.wz, target.wz, dw_max);
+        return limited_result_;
     }
 }
 
