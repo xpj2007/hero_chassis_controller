@@ -24,7 +24,7 @@ namespace hero_chassis_controller
         double wheel_radius = 0.0;
         double wheel_base   = 0.0;
         double wheel_track  = 0.0;
-        double max_effort   = 5.0;
+        double effort_limit = 5.0;
         int    mode         = 0;
 
         std::string cmd_vel_topic = "/cmd_vel";
@@ -41,12 +41,18 @@ namespace hero_chassis_controller
         control_toolbox::Pid lf_,rf_,lb_,rb_;
         bool loadPid(ros::NodeHandle& controller_nh);
         double lf_output_,rf_output_,lb_output_,rb_output_;
-        void update(WheelVelocity& wheel_velocity_target, WheelVelocity& wheel_velocity_current, const ros::Duration& period)
+
+        inline double clampEffort(double effort, double limit) {
+            return effort > limit ? limit : (effort < -limit ? -limit : effort);
+        }
+
+        void update(WheelVelocity& wheel_velocity_target, WheelVelocity& wheel_velocity_current, const ros::Duration& period, double effort_limit)
         {
-            lf_output_ = lf_.computeCommand(wheel_velocity_target.lf-wheel_velocity_current.lf, period);
-            rf_output_ = rf_.computeCommand(wheel_velocity_target.rf-wheel_velocity_current.rf, period);
-            lb_output_ = lb_.computeCommand(wheel_velocity_target.lb-wheel_velocity_current.lb, period);
-            rb_output_ = rb_.computeCommand(wheel_velocity_target.rb-wheel_velocity_current.rb, period);
+            lf_output_ = clampEffort(lf_.computeCommand(wheel_velocity_target.lf - wheel_velocity_current.lf, period), effort_limit);
+            rf_output_ = clampEffort(rf_.computeCommand(wheel_velocity_target.rf - wheel_velocity_current.rf, period), effort_limit);
+            lb_output_ = clampEffort(lb_.computeCommand(wheel_velocity_target.lb - wheel_velocity_current.lb, period), effort_limit);
+            rb_output_ = clampEffort(rb_.computeCommand(wheel_velocity_target.rb - wheel_velocity_current.rb, period), effort_limit);
+            
         }
     };
 
@@ -94,10 +100,10 @@ namespace hero_chassis_controller
         void doCmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
 
         // 里程计消息发布函数
-        void publishOdometry(const ros::Time& time);
+        void publishOdometry(const ChassisPose& odom_pose, const ChassisVelocity& v, const ros::Time& time);
 
         // TF广播函数
-        void broadcastTransform(const ros::Time& time);
+        void broadcastTransform(const ChassisPose& odom_pose, const ros::Time& time);
 
 
     };

@@ -1,43 +1,57 @@
 controller:
   hero_chassis_controller:
     type: hero_chassis_controller/HeroChassisController
-    left_front_pid:
-      p: 2.2
-      i: 0.2
-      d: 0.0
-      i_clamp_max: 5.0
-      i_clamp_min: -5.0
-      antiwindup: true
-
-    right_front_pid:
-      p: 2.2
-      i: 0.2
-      d: 0.0
-      i_clamp_max: 5.0
-      i_clamp_min: -5.0
-      antiwindup: true
-
-    left_back_pid:
-      p: 2.2
-      i: 0.2
-      d: 0.0
-      i_clamp_max: 5.0
-      i_clamp_min: -5.0
-      antiwindup: true
-
-    right_back_pid:
-      p: 2.2
-      i: 0.2
-      d: 0.0
-      i_clamp_max: 5.0
-      i_clamp_min: -5.0
-      antiwindup: true
-
+    
+    #-------车底盘数据-------
     wheel_radius: 0.07625
     wheel_track: 0.4
-    wheel_base: 0.4
-
+    wheel_base: 0.4            
+    #-------力矩限制---------
+    effort_limit: 5.0
+    #-------运行模式---------
     mode: 1
+    #------话题和坐标系------
+    cmd_vel_topic: /cmd_vel
+    odometry_topic: /odom
+    odom_frame: odom
+    base_frame: base_link
+
+    #--------PID参数--------
+    left_front_wheel_pid:
+      p: 2.2
+      i: 0.2
+      d: 0.0
+      i_clamp_max: 1.5
+      i_clamp_min: -1.5
+      antiwindup: true
+      publish_state: true
+
+    right_front_wheel_pid:
+      p: 2.2
+      i: 0.2
+      d: 0.0
+      i_clamp_max: 1.5
+      i_clamp_min: -1.5
+      antiwindup: true
+      publish_state: true
+
+    left_back_wheel_pid:
+      p: 2.2
+      i: 0.2
+      d: 0.0
+      i_clamp_max: 1.5
+      i_clamp_min: -1.5
+      antiwindup: true
+      publish_state: true
+
+    right_back_wheel_pid:
+      p: 2.2
+      i: 0.2
+      d: 0.0
+      i_clamp_max: 1.5
+      i_clamp_min: -1.5
+      antiwindup: true
+      publish_state: true
 
   joint_state_controller:
     type: joint_state_controller/JointStateController

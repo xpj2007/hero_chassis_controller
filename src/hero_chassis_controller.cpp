@@ -11,7 +11,7 @@ namespace hero_chassis_controller
         controller_nh.param("wheel_radius", wheel_radius, 0.0);
         controller_nh.param("wheel_base", wheel_base, 0.0);
         controller_nh.param("wheel_track", wheel_track, 0.0);
-        controller_nh.param("max_effort", max_effort, 5.0);
+        controller_nh.param("effort_limit", effort_limit, 5.0);
         controller_nh.param("mode", mode, 0);
 
         controller_nh.param<std::string>("cmd_vel_topic", cmd_vel_topic, "/cmd_vel");
@@ -72,15 +72,20 @@ namespace hero_chassis_controller
         const ChassisVelocity chassis_velocity_current= kinematics_.forwardKinematics(wheel_velocity_current);
 
 
-        // 里程计更新和发布
+        // 里程计坐标更新
         odometry_.updatePose(chassis_velocity_current, period.toSec());
-        // 发布里程计消息(函数未实现)
+
+        //tf坐标变换广播
+        broadcastTransform(odometry_.getChassisPose(), time);
+
+        //里程计信息发布
+        publishOdometry(odometry_.getChassisPose(),chassis_velocity_current,time);
 
         // 计算轮速目标值
         WheelVelocity wheel_velocity_target = kinematics_.inverseKinematics(chassis_velocity_target_);
 
         // PID控制器计算输出
-        wheel_pid_.update(wheel_velocity_target, wheel_velocity_current, period);
+        wheel_pid_.update(wheel_velocity_target, wheel_velocity_current, period, config_.effort_limit);
 
         // 设置关节输出
         left_front_wheel_joint_.setCommand(wheel_pid_.lf_output_);
@@ -95,6 +100,61 @@ namespace hero_chassis_controller
         chassis_velocity_target_.vx = cmd_vel_msg->linear.x;
         chassis_velocity_target_.vy = cmd_vel_msg->linear.y;
         chassis_velocity_target_.wz = cmd_vel_msg->angular.z;
+    }
+
+    void HeroChassisController::broadcastTransform(const ChassisPose& odom_pose, const ros::Time& time)
+    {
+        //欧拉角转四元数
+        tf2::Quaternion q;
+        q.setRPY(0,0,odom_pose.yaw);
+
+        //tf坐标关系
+        geometry_msgs::TransformStamped odom_trans;
+        odom_trans.header.stamp = time;
+        odom_trans.header.frame_id = config_.odom_frame;
+        odom_trans.child_frame_id = config_.base_frame;
+        odom_trans.transform.translation.x = odom_pose.x;
+        odom_trans.transform.translation.y = odom_pose.y;
+        odom_trans.transform.translation.z = 0.0;
+        odom_trans.transform.rotation.w = q.getW();
+        odom_trans.transform.rotation.x = q.getX();
+        odom_trans.transform.rotation.y = q.getY();
+        odom_trans.transform.rotation.z = q.getZ();
+
+        //发布坐标关系
+        tf_broadcaster_.sendTransform(odom_trans);
+        
+    }
+
+    void HeroChassisController::publishOdometry(const ChassisPose& odom_pose, const ChassisVelocity& v, const ros::Time& time){
+        
+        //欧拉角转四元数
+        tf2::Quaternion q;
+        q.setRPY(0,0,odom_pose.yaw);
+
+        //里程计消息
+        nav_msgs::Odometry odometry_msgs;
+        odometry_msgs.header.stamp = time;
+        odometry_msgs.header.frame_id = config_.odom_frame;
+        odometry_msgs.child_frame_id = config_.base_frame;
+        odometry_msgs.pose.pose.position.x = odom_pose.x;
+        odometry_msgs.pose.pose.position.y = odom_pose.y;
+        odometry_msgs.pose.pose.position.z = 0.0;
+        odometry_msgs.pose.pose.orientation.w = q.getW();
+        odometry_msgs.pose.pose.orientation.x = q.getX();
+        odometry_msgs.pose.pose.orientation.y = q.getY();
+        odometry_msgs.pose.pose.orientation.z = q.getZ();
+        odometry_msgs.twist.twist.linear.x = v.vx;
+        odometry_msgs.twist.twist.linear.y = v.vy;
+        odometry_msgs.twist.twist.linear.z = 0;
+        odometry_msgs.twist.twist.angular.x = 0.0;
+        odometry_msgs.twist.twist.angular.y = 0.0;
+        odometry_msgs.twist.twist.angular.z = v.wz;
+
+        //发布里程计消息
+        odometry_publisher_.publish(odometry_msgs);
+
+
     }
 }
 
