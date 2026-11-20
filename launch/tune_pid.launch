@@ -1,0 +1,29 @@
+<launch>
+  <include file="$(find hero_chassis_controller)/launch/run_simulation_and_controller.launch">
+    <arg name="paused" value="false"/>
+  </include>
+
+  <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" required="false"/>
+
+  <!-- ============ 降采样 ============
+       *_wheel_pid/state 和 /odom 都是 **1000 Hz** 发布（每轮一个，合计 4 kHz）。
+       rqt_plot 跟不上这个速率，表现为曲线空白 / 窗口卡死 —— 不是话题名错。
+       先降到 20 Hz 再画。只想看数字不用降采样，见 doc/tuning.md。 -->
+  <node name="throttle_lf" pkg="topic_tools" type="throttle" output="log"
+        args="messages /controller/hero_chassis_controller/left_front_wheel_pid/state 20 /pid_left_front"/>
+  <node name="throttle_rf" pkg="topic_tools" type="throttle" output="log"
+        args="messages /controller/hero_chassis_controller/right_front_wheel_pid/state 20 /pid_right_front"/>
+  <node name="throttle_lb" pkg="topic_tools" type="throttle" output="log"
+        args="messages /controller/hero_chassis_controller/left_back_wheel_pid/state 20 /pid_left_back"/>
+  <node name="throttle_rb" pkg="topic_tools" type="throttle" output="log"
+        args="messages /controller/hero_chassis_controller/right_back_wheel_pid/state 20 /pid_right_back"/>
+  <node name="throttle_odom" pkg="topic_tools" type="throttle" output="log"
+        args="messages /odom 20 /odom_20"/>
+
+  <node name="rqt_plot_error" pkg="rqt_plot" type="rqt_plot"
+        output="screen" required="false"
+        args="/pid_left_front/error 
+              /pid_right_front/error 
+              /pid_left_back/error 
+              /pid_right_back/error"/>
+</launch>
