@@ -21,8 +21,13 @@ int main(int argc, char **argv)
     ROS_INFO("w前进 s后退 a左移 d右移 q左转 e右转 空格停止");
 
     geometry_msgs::Twist cmd;
-    const double speed = 0.5;   // m/s
-    const double turn  = 1.0;   // rad/s
+    double speed = 0.5;   // m/s
+    double turn  = 1.0;   // rad/s
+
+    if(argc>2){
+        speed=atof(argv[1]);
+        turn=atof(argv[2]);
+    }
 
     ros::Rate rate(50);
     while (ros::ok())

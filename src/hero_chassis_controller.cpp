@@ -22,6 +22,7 @@ namespace hero_chassis_controller
         controller_nh.param("chassis_line_accel_limit", chassis_line_accel_limit, 0.5);
         controller_nh.param("chassis_angular_accel_limit", chassis_angular_accel_limit, 1.5);
         controller_nh.param("zero_speed_threshold", zero_speed_threshold, 0.2);
+        controller_nh.param("low_pass_filter_fc", low_pass_filter_fc, 50.0);
 
         return true;
     }
@@ -72,6 +73,9 @@ namespace hero_chassis_controller
             right_front_wheel_joint_.getVelocity(),
             right_back_wheel_joint_.getVelocity()
         };
+        //滤波
+        wheel_velocity_current=lowPassFilter(wheel_velocity_current,wheel_velocity_filter_,period.toSec(),config_.low_pass_filter_fc);
+
         // 计算当前底盘速度
         const ChassisVelocity chassis_velocity_current= kinematics_.forwardKinematics(wheel_velocity_current);
 
@@ -86,6 +90,18 @@ namespace hero_chassis_controller
 
         // 目标速度的加速度限幅
         chassis_velocity_applied_=limitRate(chassis_velocity_target_, chassis_velocity_applied_, config_.chassis_line_accel_limit, config_.chassis_angular_accel_limit, period.toSec());
+        //消除静态偏移积分
+        const bool rest = staticOffsetIntegralClear(chassis_velocity_applied_, wheel_velocity_current);
+        //静止时静止死区
+        if (rest) {
+            wheel_pid_.reset();
+            left_front_wheel_joint_.setCommand(0.0);
+            right_front_wheel_joint_.setCommand(0.0);
+            left_back_wheel_joint_.setCommand(0.0);
+            right_back_wheel_joint_.setCommand(0.0);
+            return;
+        }
+
         // 计算轮速目标值
         WheelVelocity wheel_velocity_target = kinematics_.inverseKinematics(chassis_velocity_applied_);
 
@@ -168,15 +184,39 @@ namespace hero_chassis_controller
         return c + (d > 0.0 ? step : -step);
     }
 
-    ChassisVelocity HeroChassisController::limitRate(const ChassisVelocity& target, const ChassisVelocity& cur, double dv_limit, double dw_limit, double dt){
+    ChassisVelocity HeroChassisController::limitRate(const ChassisVelocity& target, const ChassisVelocity& cur_tar, double dv_limit, double dw_limit, double dt){
         const double dv_max = dv_limit * dt;
         const double dw_max = dw_limit * dt;
         ChassisVelocity limited_result_;
 
-        limited_result_.vx = approach(cur.vx, target.vx, dv_max);
-        limited_result_.vy = approach(cur.vy, target.vy, dv_max);
-        limited_result_.wz = approach(cur.wz, target.wz, dw_max);
+        limited_result_.vx = approach(cur_tar.vx, target.vx, dv_max);
+        limited_result_.vy = approach(cur_tar.vy, target.vy, dv_max);
+        limited_result_.wz = approach(cur_tar.wz, target.wz, dw_max);
         return limited_result_;
+    }
+
+    bool HeroChassisController::staticOffsetIntegralClear(const ChassisVelocity& cur_tar, const WheelVelocity& cur){
+        const double target_sum = std::fabs(cur_tar.vx) + std::fabs(cur_tar.vy) + std::fabs(cur_tar.wz);
+        const double wheel_sum = std::fabs(cur.lf) + std::fabs(cur.rf) + std::fabs(cur.lb) + std::fabs(cur.rb);
+        if(target_sum < 1e-6 && wheel_sum < config_.zero_speed_threshold) {
+            if (!rest_latched_){ 
+                wheel_pid_.reset(); 
+                rest_latched_ = true; 
+            }
+        }else{
+            rest_latched_ = false;
+        }
+        return rest_latched_;
+    }
+
+    const WheelVelocity& HeroChassisController::lowPassFilter(WheelVelocity cur, WheelVelocity& after_filter, double dt, double fc){
+        const double tau = 1.0 / (2.0 * M_PI * fc);
+        const double a   = dt / (tau + dt); 
+        after_filter.lf += a * (cur.lf - after_filter.lf);
+        after_filter.lb += a * (cur.lb - after_filter.lb);
+        after_filter.rf += a * (cur.rf - after_filter.rf);
+        after_filter.rb += a * (cur.rb - after_filter.rb);
+        return after_filter;
     }
 }
 

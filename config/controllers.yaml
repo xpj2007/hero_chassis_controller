@@ -9,11 +9,14 @@ controller:
     #-------力矩限制---------
     effort_limit: 5.0
     #-------加速度限制-------
-    chassis_line_accel_limit: 0.5
-    chassis_angular_accel_limit: 1.5
+    chassis_line_accel_limit: 1.5
+    chassis_angular_accel_limit: 2.0
 
     #--------静止判断-------
     zero_speed_threshold: 0.2
+
+    #----低通滤波器截至频率----
+    low_pass_filter_fc:  50.0
 
     #-------运行模式---------
     mode: 1

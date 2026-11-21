@@ -30,6 +30,7 @@ namespace hero_chassis_controller
         double chassis_line_accel_limit    = 0.5;   
         double chassis_angular_accel_limit = 1.5;   
         double zero_speed_threshold        = 0.2; 
+        double low_pass_filter_fc = 50;
 
         std::string cmd_vel_topic = "/cmd_vel";
         std::string odometry_topic= "/odom";
@@ -58,6 +59,12 @@ namespace hero_chassis_controller
             rb_output_ = clampEffort(rb_.computeCommand(wheel_velocity_target.rb - wheel_velocity_current.rb, period), effort_limit);
             
         }
+
+        void reset()
+        {
+            lf_.reset(); rf_.reset(); lb_.reset(); rb_.reset();
+            lf_output_ = rf_output_ = lb_output_ = rb_output_ = 0.0;
+        }
     };
 
     class HeroChassisController :
@@ -84,6 +91,11 @@ namespace hero_chassis_controller
         ChassisVelocity chassis_velocity_target_;
         //加速度限幅后的速度命令
         ChassisVelocity chassis_velocity_applied_;
+        //滤波后的轮速度
+        WheelVelocity wheel_velocity_filter_;
+
+        //积分锁存器
+        bool rest_latched_ = false;
 
         //PID控制器
         HeroChassisWheelPid wheel_pid_;
@@ -112,9 +124,13 @@ namespace hero_chassis_controller
         void broadcastTransform(const ChassisPose& odom_pose, const ros::Time& time);
 
         // 速度限幅函数
-        ChassisVelocity limitRate(const ChassisVelocity& target, const ChassisVelocity& cur, double dv_limit, double dw_limit, double dt); 
+        ChassisVelocity limitRate(const ChassisVelocity& target, const ChassisVelocity& cur_tar, double dv_limit, double dw_limit, double dt); 
 
+        //消除静止偏移积分
+        bool staticOffsetIntegralClear(const ChassisVelocity& cur_tar, const WheelVelocity& cur);
 
+        //低通滤波
+        const WheelVelocity& lowPassFilter(WheelVelocity cur, WheelVelocity& after_filter, double dt, double fc);
     };
 
 
