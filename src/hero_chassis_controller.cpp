@@ -66,6 +66,9 @@ namespace hero_chassis_controller
 
     void HeroChassisController::update(const ros::Time& time, const ros::Duration& period)
     {
+        //获取目标速度
+        const ChassisVelocity chassis_velocity_target_ = getTargetVelocity(chassis_velocity_cmd_, config_.mode);
+
         // 获取当前轮速
         WheelVelocity wheel_velocity_current{
             left_front_wheel_joint_.getVelocity(),
@@ -118,9 +121,9 @@ namespace hero_chassis_controller
 
     void HeroChassisController::doCmdVelCallback(const geometry_msgs::Twist::ConstPtr& cmd_vel_msg)
     {
-        chassis_velocity_target_.vx = cmd_vel_msg->linear.x;
-        chassis_velocity_target_.vy = cmd_vel_msg->linear.y;
-        chassis_velocity_target_.wz = cmd_vel_msg->angular.z;
+        chassis_velocity_cmd_.vx = cmd_vel_msg->linear.x;
+        chassis_velocity_cmd_.vy = cmd_vel_msg->linear.y;
+        chassis_velocity_cmd_.wz = cmd_vel_msg->angular.z;
     }
 
     void HeroChassisController::broadcastTransform(const ChassisPose& odom_pose, const ros::Time& time)
@@ -217,6 +220,36 @@ namespace hero_chassis_controller
         after_filter.rf += a * (cur.rf - after_filter.rf);
         after_filter.rb += a * (cur.rb - after_filter.rb);
         return after_filter;
+    }
+
+    ChassisVelocity HeroChassisController::getTargetVelocity(const ChassisVelocity& cmd, int mode){
+        if(mode){
+            geometry_msgs::TransformStamped odom_in_base;
+            try
+            {
+                odom_in_base = tf_buffer_.lookupTransform("base_link", "odom", ros::Time(0), ros::Duration(0.0));
+            }
+            catch (const tf2::TransformException& ex)
+            {
+                ROS_WARN("%s", ex.what());
+                return cmd;
+            }
+            geometry_msgs::Vector3Stamped v_in, v_out;
+            v_in.header   = odom_in_base.header;
+            v_in.vector.x = cmd.vx;
+            v_in.vector.y = cmd.vy;
+            v_in.vector.z = 0.0;
+
+            tf2::doTransform(v_in, v_out, odom_in_base);
+
+            ChassisVelocity tar;
+
+            tar.vx = v_out.vector.x;
+            tar.vy = v_out.vector.y;
+            tar.wz = cmd.wz;
+            return tar;
+        }
+        return cmd;
     }
 }
 

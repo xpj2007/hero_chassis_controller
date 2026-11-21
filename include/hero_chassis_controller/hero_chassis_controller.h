@@ -88,7 +88,7 @@ namespace hero_chassis_controller
         ChassisControllerConfig config_;
 
         //速度命令
-        ChassisVelocity chassis_velocity_target_;
+        ChassisVelocity chassis_velocity_cmd_;
         //加速度限幅后的速度命令
         ChassisVelocity chassis_velocity_applied_;
         //滤波后的轮速度
@@ -131,6 +131,10 @@ namespace hero_chassis_controller
 
         //低通滤波
         const WheelVelocity& lowPassFilter(WheelVelocity cur, WheelVelocity& after_filter, double dt, double fc);
+
+        //目标速度转换
+        ChassisVelocity getTargetVelocity(const ChassisVelocity& cmd, int mode);
+
     };
 
 
