@@ -1,7 +1,5 @@
 <launch>
-  <include file="$(find hero_chassis_controller)/launch/run_simulation_and_controller.launch">
-    <arg name="paused" value="false"/>
-  </include>
+  <include file="$(find hero_chassis_controller)/launch/run_simulation_and_controller.launch" />
 
   <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" required="false"/>
 

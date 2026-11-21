@@ -5,7 +5,7 @@ controller:
     #-------车底盘数据-------
     wheel_radius: 0.07625
     wheel_track: 0.4
-    wheel_base: 0.4            
+    wheel_base: 0.4           
     #-------力矩限制---------
     effort_limit: 5.0
     #-------加速度限制-------
@@ -16,7 +16,7 @@ controller:
     zero_speed_threshold: 0.2
 
     #----低通滤波器截至频率----
-    low_pass_filter_fc:  50.0
+    low_pass_filter_fc:  150.0
 
     #-------运行模式---------
     mode: 1
@@ -29,37 +29,37 @@ controller:
     #--------PID参数--------
     left_front_wheel_pid:
       p: 2.4
-      i: 0.15
+      i: 0.8
       d: 0.0
-      i_clamp_max: 1.5
-      i_clamp_min: -1.5
+      i_clamp_max: 0.8
+      i_clamp_min: -0.8
       antiwindup: true
       publish_state: true
 
     right_front_wheel_pid:
       p: 2.4
-      i: 0.15
+      i: 0.8
       d: 0.0
-      i_clamp_max: 1.5
-      i_clamp_min: -1.5
+      i_clamp_max: 0.8
+      i_clamp_min: -0.8
       antiwindup: true
       publish_state: true
 
     left_back_wheel_pid:
       p: 2.4
-      i: 0.15
+      i: 0.8
       d: 0.0
-      i_clamp_max: 1.5
-      i_clamp_min: -1.5
+      i_clamp_max: 0.8
+      i_clamp_min: -0.8
       antiwindup: true
       publish_state: true
 
     right_back_wheel_pid:
       p: 2.4
-      i: 0.15
+      i: 0.8
       d: 0.0
-      i_clamp_max: 1.5
-      i_clamp_min: -1.5
+      i_clamp_max: 0.8
+      i_clamp_min: -0.8
       antiwindup: true
       publish_state: true
 

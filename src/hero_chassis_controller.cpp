@@ -82,19 +82,21 @@ namespace hero_chassis_controller
         // 计算当前底盘速度
         const ChassisVelocity chassis_velocity_current= kinematics_.forwardKinematics(wheel_velocity_current);
 
-        // 里程计坐标更新
-        odometry_.updatePose(chassis_velocity_current, period.toSec());
-
+        // 目标速度的加速度限幅
+        chassis_velocity_applied_=limitRate(chassis_velocity_target_, chassis_velocity_applied_, config_.chassis_line_accel_limit, config_.chassis_angular_accel_limit, period.toSec());
+        //消除静态偏移积分
+        const bool rest = staticOffsetIntegralClear(chassis_velocity_applied_, wheel_velocity_current);
+        //静止时静止死区
+        if (!rest) {
+            // 里程计坐标更新
+            odometry_.updatePose(chassis_velocity_current, period.toSec());
+        }
         // tf坐标变换广播
         broadcastTransform(odometry_.getChassisPose(), time);
 
         // 里程计信息发布
         publishOdometry(odometry_.getChassisPose(),chassis_velocity_current,time);
 
-        // 目标速度的加速度限幅
-        chassis_velocity_applied_=limitRate(chassis_velocity_target_, chassis_velocity_applied_, config_.chassis_line_accel_limit, config_.chassis_angular_accel_limit, period.toSec());
-        //消除静态偏移积分
-        const bool rest = staticOffsetIntegralClear(chassis_velocity_applied_, wheel_velocity_current);
         //静止时静止死区
         if (rest) {
             wheel_pid_.reset();
@@ -227,7 +229,7 @@ namespace hero_chassis_controller
             geometry_msgs::TransformStamped odom_in_base;
             try
             {
-                odom_in_base = tf_buffer_.lookupTransform("base_link", "odom", ros::Time(0), ros::Duration(0.0));
+                odom_in_base = tf_buffer_.lookupTransform(config_.base_frame, config_.odom_frame, ros::Time(0), ros::Duration(0.0));
             }
             catch (const tf2::TransformException& ex)
             {
