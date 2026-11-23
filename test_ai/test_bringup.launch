@@ -1,0 +1,30 @@
+<launch>
+  <!-- Test-only bring-up: identical robot/world/controller as the normal launch,
+       but headless (no gzclient) and no keyboard node. The params yaml is an
+       argument so parameter hypotheses can be tested without touching the repo
+       config. The world is started paused; the recorder calls
+       /gazebo/unpause_physics itself so the spawn-drop transient is captured. -->
+
+  <arg name="params" default="$(find hero_chassis_controller)/config/controllers.yaml"/>
+  <arg name="paused" default="true"/>
+  <arg name="gui" default="false"/>
+  <arg name="roller_type" default="realistic"/>
+  <arg name="spawn_z" default="0.5"/>
+
+  <param name="robot_description"
+         command="$(find xacro)/xacro $(find rm_description_for_task)/urdf/hero/hero.urdf.xacro
+                  load_chassis:=true use_simulation:=true roller_type:=$(arg roller_type)"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="world_name" value="$(find rm_gazebo)/worlds/empty.world"/>
+  </include>
+
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" clear_params="true"
+        args="-z $(arg spawn_z) -param robot_description -urdf -model hero" output="screen"/>
+
+  <rosparam file="$(arg params)" command="load"/>
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+        output="screen" args="controller/hero_chassis_controller controller/joint_state_controller"/>
+</launch>

@@ -11,6 +11,8 @@ namespace hero_chassis_controller
         controller_nh.param("wheel_radius", wheel_radius, 0.0);
         controller_nh.param("wheel_base", wheel_base, 0.0);
         controller_nh.param("wheel_track", wheel_track, 0.0);
+        controller_nh.param("k_effective", k_effective, 0.0);
+        controller_nh.param("wheel_radius_effective", wheel_radius_effective, 0.0);
         controller_nh.param("effort_limit", effort_limit, 5.0);
         controller_nh.param("mode", mode, 0);
 
@@ -52,7 +54,7 @@ namespace hero_chassis_controller
         wheel_pid_.loadPid(controller_nh);
 
         // 初始化运动学和里程计
-        kinematics_.init(config_.wheel_radius, config_.wheel_base, config_.wheel_track);
+        kinematics_.init(config_.wheel_radius, config_.wheel_base, config_.wheel_track, config_.k_effective, config_.wheel_radius_effective);
         odometry_.resetPose();
 
         // 订阅速度命令

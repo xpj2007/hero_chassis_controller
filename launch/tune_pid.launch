@@ -6,7 +6,7 @@
   <!-- ============ 降采样 ============
        *_wheel_pid/state 和 /odom 都是 **1000 Hz** 发布（每轮一个，合计 4 kHz）。
        rqt_plot 跟不上这个速率，表现为曲线空白 / 窗口卡死 —— 不是话题名错。
-       先降到 20 Hz 再画。只想看数字不用降采样，见 doc/tuning.md。 -->
+       先降到 20 Hz 再画。 -->
   <node name="throttle_lf" pkg="topic_tools" type="throttle" output="log"
         args="messages /controller/hero_chassis_controller/left_front_wheel_pid/state 20 /pid_left_front"/>
   <node name="throttle_rf" pkg="topic_tools" type="throttle" output="log"

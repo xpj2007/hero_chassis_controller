@@ -24,6 +24,8 @@ namespace hero_chassis_controller
         double wheel_radius = 0.0;
         double wheel_base   = 0.0;
         double wheel_track  = 0.0;
+        double k_effective  = 0.0;
+        double wheel_radius_effective = 0.0;
         double effort_limit = 5.0;
         int    mode         = 0;
 

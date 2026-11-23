@@ -6,7 +6,8 @@ namespace hero_chassis_controller {
 
 class HeroChassisKinematics {
 public:
-    void init(double wheel_radius, double wheel_base, double wheel_track);
+    void init(double wheel_radius, double wheel_base, double wheel_track,
+              double k_effective = 0.0 ,double wheel_radius_effective=0.0);
     ChassisVelocity forwardKinematics(const WheelVelocity& wheel_velocities_) const;
     WheelVelocity inverseKinematics(const ChassisVelocity& chassis_velocity_) const;
 private:

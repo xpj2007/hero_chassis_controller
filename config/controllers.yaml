@@ -5,7 +5,10 @@ controller:
     #-------车底盘数据-------
     wheel_radius: 0.07625
     wheel_track: 0.4
-    wheel_base: 0.4           
+    wheel_base: 0.4
+    # 仿真标定的偏航系数 k 和轮子半径 wheel_radius
+    k_effective: 0.0
+    wheel_radius_effective: 0.0
     #-------力矩限制---------
     effort_limit: 5.0
     #-------加速度限制-------
