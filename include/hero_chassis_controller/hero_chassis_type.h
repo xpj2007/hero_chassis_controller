@@ -24,6 +24,11 @@ typedef struct {
     double yaw = 0.0;
 }ChassisPose;
 
+typedef struct { 
+    bool latched = false; 
+    double timer = 0.0; 
+}RestState ;
+
 } 
 
 

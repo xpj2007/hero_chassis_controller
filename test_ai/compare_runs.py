@@ -16,7 +16,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-import hero_chassis_controller.test.static_window as static_window
+import static_window
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ANALYSIS = os.path.join(HERE, "analysis")

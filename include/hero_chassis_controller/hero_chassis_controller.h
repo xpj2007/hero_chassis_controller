@@ -29,9 +29,18 @@ namespace hero_chassis_controller
         double effort_limit = 5.0;
         int    mode         = 0;
 
+        double pid_rest_enter_threshold = 1.0;
+        double pid_rest_exit_threshold = 1.5;
+        double pid_rest_debounce = 0.10;
+        double pid_rest_rot_enter_threshold = 0.3;
+        
+        double odom_rest_enter_threshold = 0.20;
+        double odom_rest_exit_threshold = 0.50;
+        double odom_rest_debounce = 0.05;
+
+
         double chassis_line_accel_limit    = 0.5;   
         double chassis_angular_accel_limit = 1.5;   
-        double zero_speed_threshold        = 0.2; 
         double low_pass_filter_fc = 50;
 
         std::string cmd_vel_topic = "/cmd_vel";
@@ -96,8 +105,10 @@ namespace hero_chassis_controller
         //滤波后的轮速度
         WheelVelocity wheel_velocity_filter_;
 
-        //积分锁存器
-        bool rest_latched_ = false;
+        //静态复位锁存器
+        RestState pid_rest_;
+        RestState odom_rest_;
+        bool pid_rest_just_entered_ = false;
 
         //PID控制器
         HeroChassisWheelPid wheel_pid_;
@@ -128,8 +139,8 @@ namespace hero_chassis_controller
         // 速度限幅函数
         ChassisVelocity limitRate(const ChassisVelocity& target, const ChassisVelocity& cur_tar, double dv_limit, double dw_limit, double dt); 
 
-        //消除静止偏移积分
-        bool staticOffsetIntegralClear(const ChassisVelocity& cur_tar, const WheelVelocity& cur);
+        //静态判断
+        void staticJudgmentUpdateRest(RestState& s, const ChassisVelocity& cur_tar, const WheelVelocity& cur ,double enter_threshold, double exit_threshold, double dt, double debounce, double rot_enter_threshold = -1.0);
 
         //低通滤波
         const WheelVelocity& lowPassFilter(WheelVelocity cur, WheelVelocity& after_filter, double dt, double fc);

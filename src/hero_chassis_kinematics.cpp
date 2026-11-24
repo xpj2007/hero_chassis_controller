@@ -3,7 +3,7 @@
 namespace hero_chassis_controller {
     void HeroChassisKinematics::init(double wheel_radius, double wheel_base, double wheel_track,
                                      double k_effective, double wheel_radius_effective) {
-        wheel_radius_ =  (wheel_radius_effective != 0.0) ? wheel_radius_effective : wheel_radius_;
+        wheel_radius_ =  (wheel_radius_effective != 0.0) ? wheel_radius_effective : wheel_radius;
         k_ = (k_effective != 0.0) ? k_effective : (wheel_base + wheel_track) / 2.0;
     }
 

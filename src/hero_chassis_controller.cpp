@@ -16,6 +16,14 @@ namespace hero_chassis_controller
         controller_nh.param("effort_limit", effort_limit, 5.0);
         controller_nh.param("mode", mode, 0);
 
+        controller_nh.param("pid_rest_enter_threshold", pid_rest_enter_threshold, 1.0);
+        controller_nh.param("pid_rest_exit_threshold", pid_rest_exit_threshold, 1.5);
+        controller_nh.param("pid_rest_debounce", pid_rest_debounce, 0.10);
+        controller_nh.param("pid_rest_rot_enter_threshold", pid_rest_rot_enter_threshold, 0.3);
+        controller_nh.param("odom_rest_enter_threshold", odom_rest_enter_threshold, 0.20);
+        controller_nh.param("odom_rest_exit_threshold", odom_rest_exit_threshold, 0.50);
+        controller_nh.param("odom_rest_debounce", odom_rest_debounce, 0.05);
+
         controller_nh.param<std::string>("cmd_vel_topic", cmd_vel_topic, "/cmd_vel");
         controller_nh.param<std::string>("odometry_topic", odometry_topic, "/odom");
         controller_nh.param<std::string>("odom_frame", odom_frame, "odom");
@@ -23,7 +31,6 @@ namespace hero_chassis_controller
 
         controller_nh.param("chassis_line_accel_limit", chassis_line_accel_limit, 0.5);
         controller_nh.param("chassis_angular_accel_limit", chassis_angular_accel_limit, 1.5);
-        controller_nh.param("zero_speed_threshold", zero_speed_threshold, 0.2);
         controller_nh.param("low_pass_filter_fc", low_pass_filter_fc, 50.0);
 
         return true;
@@ -68,7 +75,7 @@ namespace hero_chassis_controller
 
     void HeroChassisController::update(const ros::Time& time, const ros::Duration& period)
     {
-        //获取目标速度
+        // 获取目标速度
         const ChassisVelocity chassis_velocity_target_ = getTargetVelocity(chassis_velocity_cmd_, config_.mode);
 
         // 获取当前轮速
@@ -78,7 +85,7 @@ namespace hero_chassis_controller
             right_front_wheel_joint_.getVelocity(),
             right_back_wheel_joint_.getVelocity()
         };
-        //滤波
+        // 滤波
         wheel_velocity_current=lowPassFilter(wheel_velocity_current,wheel_velocity_filter_,period.toSec(),config_.low_pass_filter_fc);
 
         // 计算当前底盘速度
@@ -86,27 +93,39 @@ namespace hero_chassis_controller
 
         // 目标速度的加速度限幅
         chassis_velocity_applied_=limitRate(chassis_velocity_target_, chassis_velocity_applied_, config_.chassis_line_accel_limit, config_.chassis_angular_accel_limit, period.toSec());
-        //消除静态偏移积分
-        const bool rest = staticOffsetIntegralClear(chassis_velocity_applied_, wheel_velocity_current);
-        //静止时静止死区
-        if (!rest) {
+        
+
+        // 静态判断
+        staticJudgmentUpdateRest(pid_rest_, chassis_velocity_applied_, wheel_velocity_current, config_.pid_rest_enter_threshold, config_.pid_rest_exit_threshold, period.toSec(),config_.pid_rest_debounce, config_.pid_rest_rot_enter_threshold);
+        staticJudgmentUpdateRest(odom_rest_, chassis_velocity_applied_, wheel_velocity_current, config_.odom_rest_enter_threshold, config_.odom_rest_exit_threshold, period.toSec(),config_.odom_rest_debounce);
+
+        // 里程计静止锁定
+        if (odom_rest_.latched){
+            // 里程计信息发布
+            publishOdometry(odometry_.getChassisPose(),ChassisVelocity{},time);
+        }else{
             // 里程计坐标更新
             odometry_.updatePose(chassis_velocity_current, period.toSec());
+            // 里程计信息发布
+            publishOdometry(odometry_.getChassisPose(),chassis_velocity_current,time);
         }
+
         // tf坐标变换广播
         broadcastTransform(odometry_.getChassisPose(), time);
-
-        // 里程计信息发布
-        publishOdometry(odometry_.getChassisPose(),chassis_velocity_current,time);
-
-        //静止时静止死区
-        if (rest) {
-            wheel_pid_.reset();
+        
+        // pid静止锁定
+        if (pid_rest_.latched) {
+            if(!pid_rest_just_entered_ ){
+                wheel_pid_.reset();
+                pid_rest_just_entered_ = true;
+            }
             left_front_wheel_joint_.setCommand(0.0);
             right_front_wheel_joint_.setCommand(0.0);
             left_back_wheel_joint_.setCommand(0.0);
             right_back_wheel_joint_.setCommand(0.0);
             return;
+        }else{
+            pid_rest_just_entered_ = false;
         }
 
         // 计算轮速目标值
@@ -202,18 +221,22 @@ namespace hero_chassis_controller
         return limited_result_;
     }
 
-    bool HeroChassisController::staticOffsetIntegralClear(const ChassisVelocity& cur_tar, const WheelVelocity& cur){
-        const double target_sum = std::fabs(cur_tar.vx) + std::fabs(cur_tar.vy) + std::fabs(cur_tar.wz);
+    void HeroChassisController::staticJudgmentUpdateRest(RestState& s,const ChassisVelocity& cur_tar, const WheelVelocity& cur , double enter_threshold , double exit_threshold, double dt, double debounce, double rot_enter_threshold){
+        
+        const bool target_zero = (std::fabs(cur_tar.vx) + std::fabs(cur_tar.vy) + std::fabs(cur_tar.wz) < 1e-6);
         const double wheel_sum = std::fabs(cur.lf) + std::fabs(cur.rf) + std::fabs(cur.lb) + std::fabs(cur.rb);
-        if(target_sum < 1e-6 && wheel_sum < config_.zero_speed_threshold) {
-            if (!rest_latched_){ 
-                wheel_pid_.reset(); 
-                rest_latched_ = true; 
-            }
-        }else{
-            rest_latched_ = false;
+        const double wheel_rot = std::fabs(-cur.lf - cur.lb + cur.rf + cur.rb);
+        const bool enter = target_zero && wheel_sum < enter_threshold &&
+                           (rot_enter_threshold < 0.0 || wheel_rot < rot_enter_threshold);
+        const bool exit  = !target_zero || wheel_sum > exit_threshold;
+
+        if (!s.latched) {
+            s.timer = enter ? s.timer + dt : 0.0;
+            if (s.timer >= debounce) s.latched = true;
+        } else if (exit) {
+            s.latched = false; 
+            s.timer = 0.0;
         }
-        return rest_latched_;
     }
 
     const WheelVelocity& HeroChassisController::lowPassFilter(WheelVelocity cur, WheelVelocity& after_filter, double dt, double fc){
