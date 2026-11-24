@@ -8,4 +8,6 @@
 
   <include file="$(find hero_chassis_controller)/launch/load_controller.launch"/>
 
+  <node name="key" pkg="hero_chassis_controller" type="key" output="screen" required="false" args="0.5 6.2831853"/>
+
 </launch>

@@ -1,0 +1,59 @@
+controller:
+  hero_chassis_controller:
+    type: hero_chassis_controller/HeroChassisController
+    wheel_radius: 0.07625
+    wheel_track: 0.4
+    wheel_base: 0.4
+    k_effective: 0.390222
+    wheel_radius_effective: 0.076309
+    effort_limit: 5.0
+    chassis_line_accel_limit: 1.5
+    chassis_angular_accel_limit: 2.0
+    pid_rest_enter_threshold: 1.0
+    pid_rest_exit_threshold: 1.5
+    pid_rest_debounce: 0.1
+    pid_rest_rot_enter_threshold: 0.3
+    odom_rest_enter_threshold: 0.5
+    odom_rest_exit_threshold: 1.0
+    odom_rest_debounce: 0.05
+    low_pass_filter_fc: 10.0
+    mode: 1
+    cmd_vel_topic: /cmd_vel
+    odometry_topic: /odom
+    odom_frame: odom
+    base_frame: base_link
+    left_front_wheel_pid:
+      p: 2.4
+      i: 0.8
+      d: 0.0
+      i_clamp_max: 0.8
+      i_clamp_min: -0.8
+      antiwindup: true
+      publish_state: true
+    right_front_wheel_pid:
+      p: 2.4
+      i: 0.8
+      d: 0.0
+      i_clamp_max: 0.8
+      i_clamp_min: -0.8
+      antiwindup: true
+      publish_state: true
+    left_back_wheel_pid:
+      p: 2.4
+      i: 0.8
+      d: 0.0
+      i_clamp_max: 0.8
+      i_clamp_min: -0.8
+      antiwindup: true
+      publish_state: true
+    right_back_wheel_pid:
+      p: 2.4
+      i: 0.8
+      d: 0.0
+      i_clamp_max: 0.8
+      i_clamp_min: -0.8
+      antiwindup: true
+      publish_state: true
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 200

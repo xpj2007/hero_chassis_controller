@@ -1,0 +1,13 @@
+# Test scaffolding runtime artifacts (test_ai/)
+# Raw recordings, plots, roslaunch/rosbag logs and ROS_HOME are regenerable
+# with run_session.sh / run_ab.sh; keep the scripts, params and report only.
+data/
+analysis/
+logs/
+.ros/
+
+# Python
+__pycache__/
+*.pyc
+
+# keep the A/B parameter copies (params/*.yaml) and .launch file
